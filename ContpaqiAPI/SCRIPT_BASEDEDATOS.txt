@@ -1,0 +1,244 @@
+﻿USE [Contpaqi]
+GO
+/****** Object:  Table [dbo].[tbl_Empleado]    Script Date: 3/3/2022 6:31:57 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[tbl_Empleado](
+	[EmpleadoId] [int] IDENTITY(1,1) NOT NULL,
+	[Nombre] [varchar](50) NULL,
+	[ApellidoPaterno] [varchar](50) NULL,
+	[ApellidoMaterno] [varchar](50) NULL,
+	[Edad] [int] NULL,
+	[FechaNacimiento] [datetime] NULL,
+	[Genero] [varchar](10) NULL,
+	[EstadoCivil] [varchar](30) NULL,
+	[RFC] [varchar](13) NULL,
+	[Direccion] [varchar](500) NULL,
+	[Email] [varchar](100) NULL,
+	[Telefono] [varchar](10) NULL,
+	[Puesto] [varchar](100) NULL,
+	[FechaAlta] [datetime] NULL,
+	[FechaBaja] [datetime] NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[EmpleadoId] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  StoredProcedure [dbo].[prc_Empleado_dl]    Script Date: 3/3/2022 6:31:57 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE PROCEDURE [dbo].[prc_Empleado_dl]
+(
+	@EmpleadoId INT,
+	@ErrorId INT OUTPUT,
+	@Error VARCHAR(MAX) OUTPUT
+)AS
+BEGIN
+SET NOCOUNT ON
+BEGIN TRY
+
+	IF(NOT EXISTS(SELECT TOP 1 1 FROM tbl_Empleado WHERE EmpleadoId = @EmpleadoId))
+	BEGIN
+		SET @ErrorId = -1
+		SET @Error = 'El EmpleadoId no existe'
+		RETURN
+	END
+
+	UPDATE tbl_Empleado 
+	SET			FechaBaja = GETDATE()
+	WHERE	EmpleadoId = @EmpleadoId
+
+	SET @ErrorId = 0
+	SET @Error = ''
+
+	SELECT * FROM tbl_Empleado
+	WHERE	EmpleadoId = @EmpleadoId
+
+END TRY
+BEGIN CATCH
+	SET @ErrorId = ERROR_NUMBER()
+	SET @Error = 'Ocurrio un error inerperado. '+ERROR_MESSAGE()
+END CATCH
+END
+GO
+/****** Object:  StoredProcedure [dbo].[prc_Empleado_in]    Script Date: 3/3/2022 6:31:57 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE PROCEDURE [dbo].[prc_Empleado_in]
+(
+	@Nombre VARCHAR(50),
+	@ApellidoPaterno VARCHAR(50),
+	@ApellidoMaterno VARCHAR(50),
+	@FechaNacimiento DATETIME,
+	@Genero VARCHAR(10),
+	@EstadoCivil VARCHAR(30),
+	@RFC VARCHAR(13),
+	@Direccion VARCHAR(MAX),
+	@Email VARCHAR(100),
+	@Telefono BIGINT,
+	@Puesto VARCHAR(100),
+	@ErrorId INT OUTPUT,
+	@Error VARCHAR(MAX) OUTPUT
+)AS
+BEGIN
+SET NOCOUNT ON
+BEGIN TRY
+	
+	INSERT INTO tbl_Empleado (
+							Nombre,
+							ApellidoPaterno,
+							ApellidoMaterno,
+							Edad,
+							FechaNacimiento,
+							Genero,
+							EstadoCivil,
+							RFC,
+							Direccion,
+							Email,
+							Telefono,
+							Puesto,
+							FechaAlta)
+	SELECT		@Nombre,
+				@ApellidoPaterno,
+				@ApellidoMaterno,
+				Edad = DATEDIFF(MM,@FechaNacimiento,GETDATE())/12,
+				@FechaNacimiento,
+				@Genero,
+				@EstadoCivil,
+				@RFC,
+				@Direccion,
+				@Email,
+				@Telefono,
+				@Puesto,
+				FechaAlta = GETDATE()
+
+	SET @ErrorId = 0
+	SET @Error = ''
+
+	SELECT		EmpleadoId,
+				Nombre,
+				ApellidoPaterno,
+				ApellidoMaterno,
+				Edad,
+				FechaNacimiento,
+				Genero,
+				EstadoCivil,
+				RFC,
+				Direccion,
+				Email,
+				Telefono,
+				Puesto,
+				FechaAlta,
+				FechaBaja
+		FROM	tbl_Empleado	
+		WHERE	EmpleadoId = @@Identity
+
+END TRY
+BEGIN CATCH
+	SET @ErrorId = ERROR_NUMBER()
+	SET @Error = 'Ocurrio un error inerperado. '+ERROR_MESSAGE()
+END CATCH
+END
+GO
+/****** Object:  StoredProcedure [dbo].[prc_Empleado_sk]    Script Date: 3/3/2022 6:31:57 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE PROCEDURE [dbo].[prc_Empleado_sk]
+(
+	@ErrorId INT OUTPUT,
+	@Error VARCHAR(MAX) OUTPUT
+)
+AS
+BEGIN
+SET NOCOUNT ON
+BEGIN TRY
+	
+	SELECT		EmpleadoId,
+				Nombre,
+				ApellidoPaterno,
+				ApellidoMaterno,
+				Edad,
+				FechaNacimiento,
+				Genero,
+				EstadoCivil,
+				RFC,
+				Direccion,
+				Email,
+				Telefono,
+				Puesto,
+				FechaAlta,
+				FechaBaja
+		FROM	tbl_Empleado
+		ORDER BY 
+				FechaAlta DESC
+
+	SET @ErrorId = 0
+	SET @Error = ''
+
+END TRY
+BEGIN CATCH
+	SET @ErrorId = ERROR_NUMBER()
+	SET @Error = 'Ocurrio un error inerperado. '+ERROR_MESSAGE()
+END CATCH
+END
+GO
+/****** Object:  StoredProcedure [dbo].[prc_Empleado_up]    Script Date: 3/3/2022 6:31:57 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE PROCEDURE [dbo].[prc_Empleado_up]
+(
+	@EmpleadoId INT,
+	@Email VARCHAR(100),
+	@Telefono BIGINT,
+	@Puesto VARCHAR(100),
+	@FechaBaja DATETIME = NULL,
+	@EstadoCivil VARCHAR(30),
+	@Direccion VARCHAR(MAX),
+	@ErrorId INT OUTPUT,
+	@Error VARCHAR(MAX) OUTPUT
+)AS
+BEGIN
+SET NOCOUNT ON
+BEGIN TRY
+
+	IF(NOT EXISTS(SELECT TOP 1 1 FROM tbl_Empleado WHERE EmpleadoId = @EmpleadoId))
+	BEGIN
+		SET @ErrorId = -1
+		SET @Error = 'El EmpleadoId no existe'
+		RETURN
+	END
+
+	UPDATE tbl_Empleado 
+	SET			Email =	@Email,	
+				Telefono = @Telefono,
+				Puesto = @Puesto,
+				FechaBaja = @FechaBaja,
+				EstadoCivil = @EstadoCivil,
+				Direccion =	 @Direccion
+	WHERE	EmpleadoId = @EmpleadoId
+
+	SET @ErrorId = 0
+	SET @Error = ''
+
+	SELECT * FROM tbl_Empleado
+	WHERE	EmpleadoId = @EmpleadoId
+
+END TRY
+BEGIN CATCH
+	SET @ErrorId = ERROR_NUMBER()
+	SET @Error = 'Ocurrio un error inerperado. '+ERROR_MESSAGE()
+END CATCH
+END
+GO
+
